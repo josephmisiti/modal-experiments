@@ -71,18 +71,10 @@ def ocr_with_bounding_boxes(image_path: str):
     enc_image = model.encode_image(image)
 
     # Perform OCR - detect text with bounding boxes
-    ocr_prompt = "Extract all text from this image and provide the pixel coordinates (bounding boxes) for each text element. Return the results in a structured format with text content and coordinates."
+    ocr_prompt = "Return everything as JSON"
 
     # Get OCR results
     ocr_result = model.answer_question(enc_image, ocr_prompt, tokenizer)
-
-    # Also get objects with bounding boxes
-    detect_prompt = "Detect all text regions in this image and provide their bounding box coordinates in pixels."
-    detection_result = model.answer_question(enc_image, detect_prompt, tokenizer)
-
-    # Try to get point-based detection for text
-    text_objects_prompt = "What text can you see in this image? For each text element, describe its location."
-    text_objects = model.answer_question(enc_image, text_objects_prompt, tokenizer)
 
     # Compile results
     results = {
@@ -91,21 +83,8 @@ def ocr_with_bounding_boxes(image_path: str):
             "width": image.width,
             "height": image.height
         },
-        "ocr_result": ocr_result,
-        "detection_result": detection_result,
-        "text_objects": text_objects,
-        "detections": []
+        "ocr_result": ocr_result
     }
-
-    # Try to query specific bounding boxes using the model's point detection
-    # Moondream supports pointing queries
-    try:
-        # Ask model to identify text regions
-        query_result = model.query(enc_image, "text", tokenizer)
-        if query_result:
-            results["raw_detections"] = query_result
-    except Exception as e:
-        results["query_error"] = str(e)
 
     # Save output
     output_filename = Path(image_path).stem + "_ocr_results.json"
